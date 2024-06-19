@@ -6,14 +6,16 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+// Symbol visibility
+#define DLL_PUBLIC __attribute__((visibility("default")))
+#define DLL_LOCAL  __attribute__((visibility("hidden")))
 
-/* Userdata object that will hold the counter and name. */
 typedef struct {
     LIPC *lipc;
 } lipc_userdata_t;
 
 typedef struct {
-    LIPCha *ha;
+LIPCha *ha; 
 } lipcha_userdata_t;
 
 void check_lipc_code(lua_State *L, LIPCcode code) {
@@ -373,7 +375,7 @@ static const struct luaL_Reg lualipc_functions[] = {
     { NULL,  NULL         }
 };
 
-int luaopen_liblualipc(lua_State *L)
+DLL_PUBLIC int luaopen_liblualipc(lua_State *L)
 {
     luaL_newmetatable(L, "LuaLipc");
     lua_pushvalue(L, -1);
