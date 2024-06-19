@@ -1,0 +1,3 @@
+[submodule "lua-compat-5.3"]
+	path = lua-compat-5.3
+	url = https://github.com/lunarmodules/lua-compat-5.3.git
