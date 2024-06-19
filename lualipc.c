@@ -54,8 +54,8 @@ static int lualipcha_keys(lua_State *L) {
     
     int count = 0;
     LIPCcode code = LipcHasharrayKeys(lha->ha, index, NULL, &count);
-    const char* array[count];
-    code = LipcHasharrayKeys(lha->ha, index, &array, &count);
+    const char *array[count];
+    code = LipcHasharrayKeys(lha->ha, index, array, &count);
     check_lipc_code(L, code);
 
     lua_createtable(L, count, 0);
@@ -87,7 +87,7 @@ static int lualipcha_put_int(lua_State *L) {
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
     int index = luaL_checkint(L, 2);
     const char* key = luaL_checkstring(L, 3);
-    const char* value = luaL_checkint(L, 4);
+    int value = luaL_checkint(L, 4);
     if (lha->ha == NULL) {
         lua_pushfstring(L, "HashArray doesn't exist.");
         return 1;
@@ -138,7 +138,7 @@ static int lualipcha_to_table(lua_State *L) {
         int key_count = 0;
         LIPCcode code = LipcHasharrayKeys(lha->ha, i, NULL, &key_count);
         const char* array[key_count];
-        code = LipcHasharrayKeys(lha->ha, i, &array, &key_count);
+        code = LipcHasharrayKeys(lha->ha, i, array, &key_count);
         check_lipc_code(L, code);
         
         lua_createtable(L, key_count, 0);
