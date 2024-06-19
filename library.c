@@ -16,6 +16,48 @@ typedef struct {
     LIPCha *ha;
 } lipcha_userdata_t;
 
+static int lualipc_new_hasharray(lua_State *L) {
+    lipc_userdata_t *lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "LuaLipc");
+    lipcha_userdata_t *lha;
+    lha       = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
+    lha->ha = NULL;
+    luaL_getmetatable(L, "LuaLipcHA");
+    lua_setmetatable(L, -2);
+    lha->ha = LipcHasharrayNew(lu->lipc);
+    return 1;
+}
+
+
+
+static int lualipcha_tostring(lua_State *L)
+{
+    lipcha_userdata_t *lha;
+
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    int size = 0;
+    LIPCcode code = LipcHasharrayToString(lha->ha, NULL, &size);
+    char* value = malloc(size);
+    code = LipcHasharrayToString(lha->ha, value, &size);
+    // todo: handle code
+    lua_pushstring(L, value);
+
+    return 1;
+}
+
+static int lualipcha_destroy(lua_State *L) {
+    lipcha_userdata_t *lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    LIPCcode code = LipcHasharrayDestroy(lha->ha);
+    // TODO handle LIPCcode
+    lha->ha = NULL;
+    return 1;
+}
+
+
+
 static int lualipc_open_no_name(lua_State *L)
 {
     lipc_userdata_t *lu;
@@ -68,6 +110,30 @@ static int lualipc_get_string_property(lua_State *L) {
     lua_pushstring(L, value);
     LipcFreeString(value);
 
+    return 1;
+}
+
+static int lualipc_access_hasharray_property(lua_State *L) {
+    lipc_userdata_t *lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "LuaLipc");
+    const char* service = luaL_checkstring(L, 2);
+    const char* property = luaL_checkstring(L, 3);
+    lipcha_userdata_t *lha = (lipcha_userdata_t *)luaL_checkudata(L, 4, "LuaLipcHA");
+
+    LIPCha* value;
+
+    LIPCcode code = LipcAccessHasharrayProperty(lu->lipc, service, property, lha->ha, &value);
+    if (code != 0) {
+        if (code != -1) {
+            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
+        } else {
+            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
+        }
+    }
+    lipcha_userdata_t* outlha = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
+    outlha->ha = NULL;
+    luaL_getmetatable(L, "LuaLipcHA");
+    lua_setmetatable(L, -2);
+    outlha->ha = value;
     return 1;
 }
 
@@ -157,13 +223,20 @@ static int lualipc_tostring(lua_State *L)
     return 1;
 }
 
-static const struct luaL_Reg lualipc_methods[] = {
+static const struct luaL_Reg lualipcha_methods[] = {
 
+    { "__gc",        lualipcha_destroy   },
+    { "__tostring",  lualipcha_tostring  },
+    { NULL,          NULL               },
+};
+
+static const struct luaL_Reg lualipc_methods[] = {
+    { "new_hasharray", lualipc_new_hasharray },
+    { "access_hash_property", lualipc_access_hasharray_property },
     { "set_string_property",  lualipc_set_string_property },
     { "get_string_property",  lualipc_get_string_property },
     { "set_int_property",  lualipc_set_int_property },
     { "get_int_property",  lualipc_get_int_property },
-    { "close",       lualipc_destroy   },
     { "__gc",        lualipc_destroy   },
     { "__tostring",  lualipc_tostring  },
     { NULL,          NULL               },
@@ -181,6 +254,12 @@ int luaopen_liblualipc(lua_State *L)
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
     luaL_setfuncs(L, lualipc_methods, 0);
+
+    luaL_newmetatable(L, "LuaLipcHA");
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+    luaL_setfuncs(L, lualipcha_methods, 0);
+
     luaL_newlib(L, lualipc_functions);
     return 1;
 }
