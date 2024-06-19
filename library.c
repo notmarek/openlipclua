@@ -16,6 +16,16 @@ typedef struct {
     LIPCha *ha;
 } lipcha_userdata_t;
 
+void check_lipc_code(lua_State *L, LIPCcode code) {
+    if (code != 0) {
+        if (code != -1) {
+            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
+        } else {
+            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
+        }
+    }
+}
+
 static int lualipc_new_hasharray(lua_State *L) {
     lipc_userdata_t *lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "LuaLipc");
     lipcha_userdata_t *lha;
@@ -28,6 +38,114 @@ static int lualipc_new_hasharray(lua_State *L) {
 }
 
 
+static int lualipcha_keys(lua_State *L) {
+
+
+    lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    int index = luaL_checkint(L, 2);
+
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    
+    int count = 0;
+    LIPCcode code = LipcHasharrayKeys(lha->ha, index, NULL, &count);
+    const char* array[count];
+    code = LipcHasharrayKeys(lha->ha, index, &array, &count);
+    check_lipc_code(L, code);
+
+    lua_createtable(L, count, 0);
+    for (int i=0; i<count; i++) {
+        lua_pushstring(L, array[i]);
+        lua_rawseti (L, -2, i+1); /* In lua indices start at 1 */
+    }
+
+    return 1;
+}
+
+static int lualipcha_add_hash(lua_State *L) {
+    lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    int index = luaL_checkint(L, 2);
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    LIPCcode code = LipcHasharrayAddHash(lha->ha, index);
+    check_lipc_code(L, code);
+
+    return 1;
+}
+
+static int lualipcha_count(lua_State *L) {
+    lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    int count = LipcHasharrayGetHashCount(lha->ha);
+    lua_pushinteger(L, count);
+    return 1;
+}
+
+static int lualipcha_to_table(lua_State *L) {
+   lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+
+    int count = LipcHasharrayGetHashCount(lha->ha);
+    lua_createtable(L, count, 0);
+    for (int i=0; i<count; i++) {
+        int key_count = 0;
+        LIPCcode code = LipcHasharrayKeys(lha->ha, i, NULL, &key_count);
+        const char* array[key_count];
+        code = LipcHasharrayKeys(lha->ha, i, &array, &key_count);
+        check_lipc_code(L, code);
+        
+        lua_createtable(L, key_count, 0);
+        for (int j=0; j<key_count; j++) {
+            LIPCHasharrayType type;
+            size_t value_size;
+            lua_pushstring(L, array[j]);
+
+            code = LipcHasharrayCheckKey(lha->ha, i, array[j], &type, &value_size);
+            check_lipc_code(L, code);
+            
+            switch(type) {
+                case LIPC_HASHARRAY_INT:
+                    int data;
+                    code = LipcHasharrayGetInt(lha->ha, i, array[j], &data);
+                    check_lipc_code(L, code);
+                    lua_pushinteger(L, data);
+                    break;
+                case LIPC_HASHARRAY_STRING:
+                    char* data_str;
+                    code = LipcHasharrayGetString(lha->ha, i, array[j], &data_str);
+                    check_lipc_code(L, code);
+                    
+                    lua_pushstring(L, data_str);
+                    break;
+                case LIPC_HASHARRAY_BLOB:
+                    lua_pushstring(L, "unsupported");
+                    break;
+            }
+            lua_settable(L, -3);
+        }
+        lua_rawseti (L, -2, i+1); /* In lua indices start at 1 */
+    }
+    return 1; 
+}
+
+// lipc = require("liblualipc")
+// lel = lipc.open("com.notmarek.test")
+// scan = lel:access_hash_property("com.lab126.wifid", "profileData", lel:new_hasharray())
+// d = scan:to_table()
 
 static int lualipcha_tostring(lua_State *L)
 {
@@ -42,7 +160,8 @@ static int lualipcha_tostring(lua_State *L)
     LIPCcode code = LipcHasharrayToString(lha->ha, NULL, &size);
     char* value = malloc(size);
     code = LipcHasharrayToString(lha->ha, value, &size);
-    // todo: handle code
+    check_lipc_code(L, code);
+
     lua_pushstring(L, value);
 
     return 1;
@@ -51,7 +170,7 @@ static int lualipcha_tostring(lua_State *L)
 static int lualipcha_destroy(lua_State *L) {
     lipcha_userdata_t *lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
     LIPCcode code = LipcHasharrayDestroy(lha->ha);
-    // TODO handle LIPCcode
+    check_lipc_code(L, code);
     lha->ha = NULL;
     return 1;
 }
@@ -82,14 +201,7 @@ static int lualipc_open(lua_State *L)
     lua_setmetatable(L, -2);
     LIPCcode code;
     lu->lipc = LipcOpenEx(service_name, &code);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
-
+    check_lipc_code(L, code);
     return 1;
 }
 
@@ -100,13 +212,7 @@ static int lualipc_get_string_property(lua_State *L) {
     char* value;
 
     LIPCcode code = LipcGetStringProperty(lu->lipc, service, property, &value);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
+    check_lipc_code(L, code);
     lua_pushstring(L, value);
     LipcFreeString(value);
 
@@ -122,13 +228,8 @@ static int lualipc_access_hasharray_property(lua_State *L) {
     LIPCha* value;
 
     LIPCcode code = LipcAccessHasharrayProperty(lu->lipc, service, property, lha->ha, &value);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
+    check_lipc_code(L, code);
+    
     lipcha_userdata_t* outlha = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
     outlha->ha = NULL;
     luaL_getmetatable(L, "LuaLipcHA");
@@ -144,13 +245,8 @@ static int lualipc_set_string_property(lua_State *L) {
     const char* value = luaL_checkstring(L, 4);
 
     LIPCcode code = LipcSetStringProperty(lu->lipc, service, property, value);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
+    check_lipc_code(L, code);
+    
 
     return 1;
 }
@@ -163,13 +259,8 @@ static int lualipc_get_int_property(lua_State *L) {
     int value;
 
     LIPCcode code = LipcGetIntProperty(lu->lipc, service, property, &value);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
+    check_lipc_code(L, code);
+    
     lua_pushinteger(L, value);
 
     return 1;
@@ -182,13 +273,8 @@ static int lualipc_set_int_property(lua_State *L) {
     int value = luaL_checkint(L, 4);
 
     LIPCcode code = LipcSetIntProperty(lu->lipc, service, property, value);
-    if (code != 0) {
-        if (code != -1) {
-            luaL_error(L, "Lipc error: %d:%s", code, LipcGetErrorString(code));
-        } else {
-            luaL_error(L, "Unknown error while opening a lipc handle, most likely service name wasn't a fully qualified dot-separated identifier.");
-        }
-    }
+    check_lipc_code(L, code);
+
 
     return 1;
 }
@@ -224,6 +310,11 @@ static int lualipc_tostring(lua_State *L)
 }
 
 static const struct luaL_Reg lualipcha_methods[] = {
+
+    { "add_hash", lualipcha_add_hash },
+    { "count", lualipcha_count },
+    { "keys", lualipcha_keys },
+    { "to_table", lualipcha_to_table },
 
     { "__gc",        lualipcha_destroy   },
     { "__tostring",  lualipcha_tostring  },
