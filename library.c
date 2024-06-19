@@ -65,15 +65,46 @@ static int lualipcha_keys(lua_State *L) {
     return 1;
 }
 
-static int lualipcha_add_hash(lua_State *L) {
+static int lualipcha_put_string(lua_State *L) {
     lipcha_userdata_t *lha;
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
     int index = luaL_checkint(L, 2);
+    const char* key = luaL_checkstring(L, 3);
+    const char* value = luaL_checkstring(L, 4);
     if (lha->ha == NULL) {
         lua_pushfstring(L, "HashArray doesn't exist.");
         return 1;
     }
-    LIPCcode code = LipcHasharrayAddHash(lha->ha, index);
+    LIPCcode code = LipcHasharrayPutString(lha->ha, index, key, value);
+    check_lipc_code(L, code);
+    return 1;
+}
+
+static int lualipcha_put_int(lua_State *L) {
+    lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+    int index = luaL_checkint(L, 2);
+    const char* key = luaL_checkstring(L, 3);
+    const char* value = luaL_checkint(L, 4);
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    LIPCcode code = LipcHasharrayPutInt(lha->ha, index, key, value);
+    check_lipc_code(L, code);
+    return 1;
+}
+
+static int lualipcha_add_hash(lua_State *L) {
+    lipcha_userdata_t *lha;
+    lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
+
+    if (lha->ha == NULL) {
+        lua_pushfstring(L, "HashArray doesn't exist.");
+        return 1;
+    }
+    size_t index = 0;
+    LIPCcode code = LipcHasharrayAddHash(lha->ha, &index);
     check_lipc_code(L, code);
 
     return 1;
@@ -92,7 +123,7 @@ static int lualipcha_count(lua_State *L) {
 }
 
 static int lualipcha_to_table(lua_State *L) {
-   lipcha_userdata_t *lha;
+    lipcha_userdata_t *lha;
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "LuaLipcHA");
     if (lha->ha == NULL) {
         lua_pushfstring(L, "HashArray doesn't exist.");
@@ -311,6 +342,9 @@ static int lualipc_tostring(lua_State *L)
 
 static const struct luaL_Reg lualipcha_methods[] = {
 
+
+    { "put_string", lualipcha_put_string },
+    { "put_int", lualipcha_put_int },
     { "add_hash", lualipcha_add_hash },
     { "count", lualipcha_count },
     { "keys", lualipcha_keys },
