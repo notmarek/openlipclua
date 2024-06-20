@@ -45,7 +45,7 @@ static int openlipcluaha_keys(lua_State *L) {
     int index = luaL_checkint(L, 2);
 
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
 
@@ -71,7 +71,7 @@ static int openlipcluaha_put_string(lua_State *L) {
     const char* key = luaL_checkstring(L, 3);
     const char* value = luaL_checkstring(L, 4);
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
     LIPCcode code = LipcHasharrayPutString(lha->ha, index, key, value);
@@ -86,7 +86,7 @@ static int openlipcluaha_put_int(lua_State *L) {
     const char* key = luaL_checkstring(L, 3);
     int value = luaL_checkint(L, 4);
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
     LIPCcode code = LipcHasharrayPutInt(lha->ha, index, key, value);
@@ -99,7 +99,7 @@ static int openlipcluaha_add_hash(lua_State *L) {
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
 
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
     size_t index = 0;
@@ -113,7 +113,7 @@ static int openlipcluaha_count(lua_State *L) {
     lipcha_userdata_t *lha;
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
     int count = LipcHasharrayGetHashCount(lha->ha);
@@ -125,7 +125,7 @@ static int openlipcluaha_to_table(lua_State *L) {
     lipcha_userdata_t *lha;
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
 
@@ -182,7 +182,7 @@ static int openlipcluaha_tostring(lua_State *L) {
 
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
     if (lha->ha == NULL) {
-        lua_pushfstring(L, "HashArray doesn't exist.");
+        lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
     int size = 0;
@@ -303,7 +303,6 @@ static int openlipclua_set_int_property(lua_State *L) {
     return 1;
 }
 
-
 static int openlipclua_destroy(lua_State *L) {
     lipc_userdata_t *lu;
 
@@ -320,7 +319,7 @@ static int openlipclua_tostring(lua_State *L) {
 
     lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLua");
     if (lu->lipc == NULL) {
-        lua_pushfstring(L, "LipcHandle is closed.");
+        lua_pushstring(L, "LipcHandle is closed.");
         return 1;
     }
     const char* lipc_service_name = LipcGetServiceName(lu->lipc);
