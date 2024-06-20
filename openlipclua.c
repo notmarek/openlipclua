@@ -315,34 +315,33 @@ static int openlipclua_tostring(lua_State *L) {
 }
 
 static const struct luaL_Reg openlipcluaha_methods[] = {
-    { "put_string", openlipcluaha_put_string },
-    { "put_int", openlipcluaha_put_int },
-    { "add_hash", openlipcluaha_add_hash },
-    { "count", openlipcluaha_count },
-    { "keys", openlipcluaha_keys },
-    { "to_table", openlipcluaha_to_table },
-
-    { "__gc",        openlipcluaha_destroy   },
-    { "__tostring",  openlipcluaha_tostring  },
-    { NULL,          NULL               },
+    { "put_string",  openlipcluaha_put_string },
+    { "put_int",     openlipcluaha_put_int    },
+    { "add_hash",    openlipcluaha_add_hash   },
+    { "count",       openlipcluaha_count      },
+    { "keys",        openlipcluaha_keys       },
+    { "to_table",    openlipcluaha_to_table   },
+    { "__gc",        openlipcluaha_destroy    },
+    { "__tostring",  openlipcluaha_tostring   },
+    { NULL,          NULL                     },
 };
 
 static const struct luaL_Reg openlipclua_methods[] = {
-    { "new_hasharray", openlipclua_new_hasharray },
+    { "new_hasharray",        openlipclua_new_hasharray             },
     { "access_hash_property", openlipclua_access_hasharray_property },
-    { "set_string_property",  openlipclua_set_string_property },
-    { "get_string_property",  openlipclua_get_string_property },
-    { "set_int_property",  openlipclua_set_int_property },
-    { "get_int_property",  openlipclua_get_int_property },
-    { "__gc",        openlipclua_destroy   },
-    { "__tostring",  openlipclua_tostring  },
-    { NULL,          NULL               },
+    { "set_string_property",  openlipclua_set_string_property       },
+    { "get_string_property",  openlipclua_get_string_property       },
+    { "set_int_property",     openlipclua_set_int_property          },
+    { "get_int_property",     openlipclua_get_int_property          },
+    { "__gc",                 openlipclua_destroy                   },
+    { "__tostring",           openlipclua_tostring                  },
+    { NULL,                   NULL                                  },
 };
 
 static const struct luaL_Reg openlipclua_functions[] = {
     { "open_no_name", openlipclua_open_no_name },
-    { "open", openlipclua_open },
-    { NULL,  NULL         }
+    { "open",         openlipclua_open         },
+    { NULL,           NULL                     }
 };
 
 DLL_PUBLIC int luaopen_libopenlipclua(lua_State *L) {
