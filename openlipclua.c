@@ -15,7 +15,7 @@ typedef struct {
 } lipc_userdata_t;
 
 typedef struct {
-LIPCha *ha; 
+    LIPCha *ha;
 } lipcha_userdata_t;
 
 void check_lipc_code(lua_State *L, LIPCcode code) {
@@ -31,7 +31,7 @@ void check_lipc_code(lua_State *L, LIPCcode code) {
 static int openlipclua_new_hasharray(lua_State *L) {
     lipc_userdata_t *lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLua");
     lipcha_userdata_t *lha;
-    lha       = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
+    lha     = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
     lha->ha = NULL;
     luaL_getmetatable(L, "OpenLipcLuaHA");
     lua_setmetatable(L, -2);
@@ -39,10 +39,7 @@ static int openlipclua_new_hasharray(lua_State *L) {
     return 1;
 }
 
-
 static int openlipcluaha_keys(lua_State *L) {
-
-
     lipcha_userdata_t *lha;
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
     int index = luaL_checkint(L, 2);
@@ -51,7 +48,7 @@ static int openlipcluaha_keys(lua_State *L) {
         lua_pushfstring(L, "HashArray doesn't exist.");
         return 1;
     }
-    
+
     int count = 0;
     LIPCcode code = LipcHasharrayKeys(lha->ha, index, NULL, &count);
     const char *array[count];
@@ -140,7 +137,7 @@ static int openlipcluaha_to_table(lua_State *L) {
         const char* array[key_count];
         code = LipcHasharrayKeys(lha->ha, i, array, &key_count);
         check_lipc_code(L, code);
-        
+
         lua_createtable(L, key_count, 0);
         for (int j=0; j<key_count; j++) {
             LIPCHasharrayType type;
@@ -149,7 +146,7 @@ static int openlipcluaha_to_table(lua_State *L) {
 
             code = LipcHasharrayCheckKey(lha->ha, i, array[j], &type, &value_size);
             check_lipc_code(L, code);
-            
+
             switch(type) {
                 case LIPC_HASHARRAY_INT:
                     int data;
@@ -161,7 +158,7 @@ static int openlipcluaha_to_table(lua_State *L) {
                     char* data_str;
                     code = LipcHasharrayGetString(lha->ha, i, array[j], &data_str);
                     check_lipc_code(L, code);
-                    
+
                     lua_pushstring(L, data_str);
                     break;
                 case LIPC_HASHARRAY_BLOB:
@@ -172,7 +169,7 @@ static int openlipcluaha_to_table(lua_State *L) {
         }
         lua_rawseti (L, -2, i+1); /* In lua indices start at 1 */
     }
-    return 1; 
+    return 1;
 }
 
 // lipc = require("libopenlipclua")
@@ -180,8 +177,7 @@ static int openlipcluaha_to_table(lua_State *L) {
 // scan = lel:access_hash_property("com.lab126.wifid", "profileData", lel:new_hasharray())
 // d = scan:to_table()
 
-static int openlipcluaha_tostring(lua_State *L)
-{
+static int openlipcluaha_tostring(lua_State *L) {
     lipcha_userdata_t *lha;
 
     lha = (lipcha_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLuaHA");
@@ -208,22 +204,17 @@ static int openlipcluaha_destroy(lua_State *L) {
     return 1;
 }
 
-
-
-static int openlipclua_open_no_name(lua_State *L)
-{
+static int openlipclua_open_no_name(lua_State *L) {
     lipc_userdata_t *lu;
     lu       = (lipc_userdata_t *)lua_newuserdata(L, sizeof(*lu));
     lu->lipc = NULL;
     luaL_getmetatable(L, "OpenLipcLua");
     lua_setmetatable(L, -2);
-    lu->lipc    = LipcOpenNoName();
+    lu->lipc = LipcOpenNoName();
     return 1;
 }
 
-static int openlipclua_open(lua_State *L)
-{
-
+static int openlipclua_open(lua_State *L) {
     const char* service_name = luaL_checkstring(L, 1);
     if (service_name == NULL)
         luaL_error(L, "service_name cannot be empty");
@@ -262,7 +253,7 @@ static int openlipclua_access_hasharray_property(lua_State *L) {
 
     LIPCcode code = LipcAccessHasharrayProperty(lu->lipc, service, property, lha->ha, &value);
     check_lipc_code(L, code);
-    
+
     lipcha_userdata_t* outlha = (lipcha_userdata_t *)lua_newuserdata(L, sizeof(*lha));
     outlha->ha = NULL;
     luaL_getmetatable(L, "OpenLipcLuaHA");
@@ -279,7 +270,6 @@ static int openlipclua_set_string_property(lua_State *L) {
 
     LIPCcode code = LipcSetStringProperty(lu->lipc, service, property, value);
     check_lipc_code(L, code);
-    
 
     return 1;
 }
@@ -293,7 +283,7 @@ static int openlipclua_get_int_property(lua_State *L) {
 
     LIPCcode code = LipcGetIntProperty(lu->lipc, service, property, &value);
     check_lipc_code(L, code);
-    
+
     lua_pushinteger(L, value);
 
     return 1;
@@ -313,9 +303,7 @@ static int openlipclua_set_int_property(lua_State *L) {
 }
 
 
-
-static int openlipclua_destroy(lua_State *L)
-{
+static int openlipclua_destroy(lua_State *L) {
     lipc_userdata_t *lu;
 
     lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLua");
@@ -326,8 +314,7 @@ static int openlipclua_destroy(lua_State *L)
     return 0;
 }
 
-static int openlipclua_tostring(lua_State *L)
-{
+static int openlipclua_tostring(lua_State *L) {
     lipc_userdata_t *lu;
 
     lu = (lipc_userdata_t *)luaL_checkudata(L, 1, "OpenLipcLua");
@@ -336,15 +323,13 @@ static int openlipclua_tostring(lua_State *L)
         return 1;
     }
     const char* lipc_service_name = LipcGetServiceName(lu->lipc);
-    
+
     lua_pushfstring(L, "LipcHandle (%s)", lipc_service_name != NULL ? lipc_service_name : "No registered service" );
 
     return 1;
 }
 
 static const struct luaL_Reg openlipcluaha_methods[] = {
-
-
     { "put_string", openlipcluaha_put_string },
     { "put_int", openlipcluaha_put_int },
     { "add_hash", openlipcluaha_add_hash },
@@ -375,8 +360,7 @@ static const struct luaL_Reg openlipclua_functions[] = {
     { NULL,  NULL         }
 };
 
-DLL_PUBLIC int luaopen_libopenlipclua(lua_State *L)
-{
+DLL_PUBLIC int luaopen_libopenlipclua(lua_State *L) {
     luaL_newmetatable(L, "OpenLipcLua");
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
