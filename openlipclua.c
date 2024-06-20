@@ -47,14 +47,14 @@ static int openlipcluaha_keys(lua_State *L) {
         return 1;
     }
 
-    int count = 0;
+    size_t count = 0;
     LIPCcode code = LipcHasharrayKeys(lha->ha, index, NULL, &count);
     const char *array[count];
     code = LipcHasharrayKeys(lha->ha, index, array, &count);
     check_lipc_code(L, code);
 
     lua_createtable(L, count, 0);
-    for (int i=0; i<count; i++) {
+    for (size_t i=0; i<count; i++) {
         lua_pushstring(L, array[i]);
         lua_rawseti(L, -2, i+1); /* In lua indices start at 1 */
     }
@@ -125,14 +125,14 @@ static int openlipcluaha_to_table(lua_State *L) {
     int count = LipcHasharrayGetHashCount(lha->ha);
     lua_createtable(L, count, 0);
     for (int i=0; i<count; i++) {
-        int key_count = 0;
+        size_t key_count = 0;
         LIPCcode code = LipcHasharrayKeys(lha->ha, i, NULL, &key_count);
         const char* array[key_count];
         code = LipcHasharrayKeys(lha->ha, i, array, &key_count);
         check_lipc_code(L, code);
 
         lua_createtable(L, key_count, 0);
-        for (int j=0; j<key_count; j++) {
+        for (size_t j=0; j<key_count; j++) {
             LIPCHasharrayType type;
             size_t value_size;
             lua_pushstring(L, array[j]);
@@ -176,7 +176,7 @@ static int openlipcluaha_tostring(lua_State *L) {
         lua_pushstring(L, "HashArray doesn't exist.");
         return 1;
     }
-    int size = 0;
+    size_t size = 0;
     LIPCcode code = LipcHasharrayToString(lha->ha, NULL, &size);
     char* value = malloc(size);
     code = LipcHasharrayToString(lha->ha, value, &size);
