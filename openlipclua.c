@@ -244,7 +244,7 @@ static int openlipclua_access_hasharray_property(lua_State *L) {
     LIPCcode code = LipcAccessHasharrayProperty(lu->lipc, service, property, lha->ha, &value);
     check_lipc_code(L, code);
 
-    lipcha_userdata_t* outlha = lua_newuserdata(L, sizeof(*lha));
+    lipcha_userdata_t* outlha = lua_newuserdata(L, sizeof(*outlha));
     outlha->ha = NULL;
     luaL_getmetatable(L, "OpenLipcLuaHA");
     lua_setmetatable(L, -2);
