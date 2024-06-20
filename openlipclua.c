@@ -192,6 +192,7 @@ static int openlipcluaha_tostring(lua_State *L) {
     check_lipc_code(L, code);
 
     lua_pushstring(L, value);
+    free(value);
 
     return 1;
 }
