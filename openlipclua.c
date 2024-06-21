@@ -33,6 +33,7 @@ void check_lipc_code(lua_State *L, LIPCcode code) {
 static int openlipclua_new_hasharray(lua_State *L) {
     lipc_userdata_t *lu = luaL_checkudata(L, 1, META_NAME_OPENLIPC);
     lipcha_userdata_t *lha = lua_newuserdata(L, sizeof(*lha));
+    printf("New HA %p for handle %p\n", lha, lu);
     lha->ha = NULL;
     luaL_getmetatable(L, META_NAME_OPENLIPC_HA);
     lua_setmetatable(L, -2);
@@ -192,18 +193,29 @@ static int openlipcluaha_tostring(lua_State *L) {
 
 static int openlipcluaha_destroy(lua_State *L) {
     lipcha_userdata_t *lha = luaL_checkudata(L, 1, META_NAME_OPENLIPC_HA);
-    LIPCcode code = LipcHasharrayDestroy(lha->ha);
-    check_lipc_code(L, code);
-    lha->ha = NULL;
-    return 1;
+    printf("HA __gc on %p\n", lha);
+    if (lha->ha != NULL) {
+        LIPCcode code = LipcHasharrayDestroy(lha->ha);
+        // FIXME: This can throw, which is possibly not great in a finalizer?
+        check_lipc_code(L, code);
+        lha->ha = NULL;
+    }
+
+    return 0;
 }
 
 static int openlipclua_open_no_name(lua_State *L) {
+    LIPC *handle = LipcOpenNoName();
+    if (!handle) {
+        lua_pushnil(L);
+        return 1;
+    }
+
     lipc_userdata_t *lu = lua_newuserdata(L, sizeof(*lu));
-    lu->lipc = NULL;
+    printf("New handle %p\n", lu);
     luaL_getmetatable(L, META_NAME_OPENLIPC);
     lua_setmetatable(L, -2);
-    lu->lipc = LipcOpenNoName();
+    lu->lipc = handle;
     return 1;
 }
 
@@ -212,6 +224,7 @@ static int openlipclua_open(lua_State *L) {
     if (service_name == NULL)
         luaL_error(L, "service_name cannot be empty");
     lipc_userdata_t *lu = lua_newuserdata(L, sizeof(*lu));
+    printf("New named handle %p (%s)\n", lu, service_name);
     lu->lipc = NULL;
     luaL_getmetatable(L, META_NAME_OPENLIPC);
     lua_setmetatable(L, -2);
@@ -247,6 +260,7 @@ static int openlipclua_access_hasharray_property(lua_State *L) {
     check_lipc_code(L, code);
 
     lipcha_userdata_t* outlha = lua_newuserdata(L, sizeof(*outlha));
+    printf("New HA %p\n", outlha);
     outlha->ha = NULL;
     luaL_getmetatable(L, META_NAME_OPENLIPC_HA);
     lua_setmetatable(L, -2);
@@ -296,9 +310,11 @@ static int openlipclua_set_int_property(lua_State *L) {
 
 static int openlipclua_destroy(lua_State *L) {
     lipc_userdata_t *lu = luaL_checkudata(L, 1, META_NAME_OPENLIPC);
-    if (lu->lipc != NULL)
+    printf("__gc on %p\n", lu);
+    if (lu->lipc != NULL) {
         LipcClose(lu->lipc);
-    lu->lipc = NULL;
+        lu->lipc = NULL;
+    }
 
     return 0;
 }
@@ -323,6 +339,7 @@ static const struct luaL_Reg openlipcluaha_methods[] = {
     { "count",       openlipcluaha_count      },
     { "keys",        openlipcluaha_keys       },
     { "to_table",    openlipcluaha_to_table   },
+    { "destroy",     openlipcluaha_destroy    },
     { "__gc",        openlipcluaha_destroy    },
     { "__tostring",  openlipcluaha_tostring   },
     { NULL,          NULL                     },
@@ -335,6 +352,7 @@ static const struct luaL_Reg openlipclua_methods[] = {
     { "get_string_property",  openlipclua_get_string_property       },
     { "set_int_property",     openlipclua_set_int_property          },
     { "get_int_property",     openlipclua_get_int_property          },
+    { "close",                openlipclua_destroy                   },
     { "__gc",                 openlipclua_destroy                   },
     { "__tostring",           openlipclua_tostring                  },
     { NULL,                   NULL                                  },
