@@ -7,7 +7,7 @@ SRCS:=openlipclua.c
 OBJS:=$(SRCS:.c=.o)
 
 EXTRA_CPPFLAGS:=-I$(LUADIR) -Ilua-compat-5.3/c-api -Iopenlipc/include
-EXTRA_CFLAGS:=-fvisibility=hidden -fPIC
+EXTRA_CFLAGS:=-Wall -Wextra -fvisibility=hidden -fPIC
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
