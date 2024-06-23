@@ -272,6 +272,8 @@ static int openlipclua_access_hasharray_property(lua_State *L) {
     outlha->ha = NULL;
     luaL_getmetatable(L, META_NAME_OPENLIPC_HA);
     lua_setmetatable(L, -2);
+    // NOTE: LipcAccessHasharrayProperty *may* return a NULL here,
+    //       hence the various guards in our HA methods.
     outlha->ha = value;
     return 1;
 }
