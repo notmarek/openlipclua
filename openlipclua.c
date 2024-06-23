@@ -272,6 +272,8 @@ static int openlipclua_access_hasharray_property(lua_State *L) {
     outlha->ha = NULL;
     luaL_getmetatable(L, META_NAME_OPENLIPC_HA);
     lua_setmetatable(L, -2);
+    // NOTE: LipcAccessHasharrayProperty *may* return a NULL here,
+    //       hence the various guards in our HA methods.
     outlha->ha = value;
     return 1;
 }
@@ -285,7 +287,7 @@ static int openlipclua_set_string_property(lua_State *L) {
     LIPCcode code = LipcSetStringProperty(lu->lipc, service, property, value);
     check_lipc_code(L, code);
 
-    // Pop the args, so we return the HA and not value
+    // Pop the args, so we return the handle and not value
     lua_settop(L, 1);
     return 1;
 }
@@ -314,7 +316,7 @@ static int openlipclua_set_int_property(lua_State *L) {
     LIPCcode code = LipcSetIntProperty(lu->lipc, service, property, value);
     check_lipc_code(L, code);
 
-    // Pop the args, so we return the HA and not value
+    // Pop the args, so we return the handle and not value
     lua_settop(L, 1);
     return 1;
 }
