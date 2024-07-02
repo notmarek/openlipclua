@@ -154,15 +154,15 @@ static int openlipcluaha_to_table(lua_State *L) {
             code = LipcHasharrayCheckKey(lha->ha, i, array[j], &type, &value_size);
             check_lipc_code(L, code);
 
+            int data;
+            char* data_str;
             switch(type) {
                 case LIPC_HASHARRAY_INT:
-                    int data;
                     code = LipcHasharrayGetInt(lha->ha, i, array[j], &data);
                     check_lipc_code(L, code);
                     lua_pushinteger(L, data);
                     break;
                 case LIPC_HASHARRAY_STRING:
-                    char* data_str;
                     code = LipcHasharrayGetString(lha->ha, i, array[j], &data_str);
                     check_lipc_code(L, code);
 
